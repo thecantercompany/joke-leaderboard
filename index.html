@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Joke Leaderboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: linear-gradient(180deg, #2a2448 0%, #1e2a45 30%, #2d3a52 60%, #3a2f48 100%);
+    background-attachment: fixed;
+    color: #e8ddd0;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  header h1 {
+    font-size: 1.6rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #f0a050, #e87890, #7eb8e0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.3rem;
+  }
+
+  header p {
+    color: #8b7e9a;
+    font-size: 0.85rem;
+  }
+
+  .section {
+    background: #1e1a35;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #2d2750;
+  }
+
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #e8913a;
+    margin-bottom: 1rem;
+  }
+
+  /* Podium */
+  .podium {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 0 0;
+  }
+
+  .podium-spot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 200px;
+  }
+
+  .podium-spot .trophy { font-size: 2rem; margin-bottom: 0.4rem; }
+  .podium-spot .name { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.15rem; }
+  .podium-spot .points { font-size: 0.85rem; color: #a89bae; margin-bottom: 0.5rem; }
+  .podium-spot .points span { font-weight: 700; color: #e8ddd0; }
+
+  .podium-bar {
+    width: 100%;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 1.5rem;
+    color: rgba(0,0,0,0.3);
+  }
+
+  .podium-spot:nth-child(1) .podium-bar { background: linear-gradient(180deg, #8b7e9a, #5e4f78); height: 80px; }
+  .podium-spot:nth-child(2) .podium-bar { background: linear-gradient(180deg, #f0a050, #e8913a); height: 110px; }
+  .podium-spot:nth-child(3) .podium-bar { background: linear-gradient(180deg, #e87890, #c95a72); height: 60px; }
+
+  .podium-spot .stats-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: #8b7e9a;
+  }
+
+  /* Chat Window */
+  .chat-window {
+    background: #120f24;
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 1rem 0 0.75rem;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .chat-bubble-row {
+    display: flex;
+    margin-bottom: 0.35rem;
+    align-items: flex-end;
+    gap: 0.4rem;
+  }
+
+  .chat-bubble-row.me { justify-content: flex-end; }
+  .chat-bubble-row.them { justify-content: flex-start; }
+
+  .chat-sender {
+    font-size: 0.65rem;
+    color: #8b7e9a;
+    margin-bottom: 0.15rem;
+    padding-left: 0.5rem;
+  }
+
+  .chat-sender.me-label { text-align: right; padding-right: 0.5rem; padding-left: 0; }
+
+  .chat-bubble {
+    max-width: 75%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    position: relative;
+  }
+
+  .chat-bubble-row.me .chat-bubble {
+    background: #4a6fa5;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-bubble-row.them .chat-bubble {
+    background: #2d2750;
+    color: #e8ddd0;
+    border-bottom-left-radius: 4px;
+  }
+
+  .chat-bubble.highlighted {
+    outline: 2px solid #f0a050;
+    outline-offset: 2px;
+    box-shadow: 0 0 12px rgba(240, 160, 80, 0.3);
+  }
+
+  .chat-bubble .reaction-badge {
+    position: absolute;
+    bottom: -10px;
+    right: 8px;
+    background: #352f55;
+    border-radius: 999px;
+    padding: 1px 5px;
+    font-size: 0.7rem;
+    border: 2px solid #1e1a35;
+  }
+
+  /* Best Joke */
+  .best-joke { text-align: center; }
+
+  .best-joke .score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: linear-gradient(135deg, #3d2510, #5c3a18);
+    border: 1px solid #e8913a;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 0 10px rgba(232, 145, 58, 0.2);
+  }
+
+  .best-joke .joke-meta {
+    font-size: 0.8rem;
+    color: #8b7e9a;
+    margin-top: 0.5rem;
+  }
+
+  .best-joke .joke-meta .author-name {
+    color: #e87890;
+    font-weight: 600;
+  }
+
+  /* Superlatives */
+  .superlatives-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .superlative-card {
+    background: #120f24;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid #2d2750;
+  }
+
+  .superlative-card .sup-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .superlative-card .sup-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: #e8913a; margin-bottom: 0.4rem; font-weight: 700; }
+  .superlative-card .sup-name { font-weight: 700; font-size: 1rem; color: #e8ddd0; }
+  .superlative-card .sup-detail { font-size: 0.75rem; color: #a89bae; margin-top: 0.2rem; line-height: 1.4; }
+  .superlative-card .sup-joke { font-size: 0.75rem; color: #8b7e9a; margin-top: 0.35rem; font-style: italic; }
+
+  .superlative-card.wide { grid-column: 1 / -1; }
+
+  /* Controversial */
+  .controversial {
+    text-align: center;
+    padding: 0.5rem 0;
+  }
+
+  .controversial .split-scores {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin: 0.75rem 0;
+  }
+
+  .controversial .split-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .controversial .split-score .grader-label {
+    font-size: 0.7rem;
+    color: #8b7e9a;
+    margin-bottom: 0.15rem;
+  }
+
+  .controversial .split-score .score-val {
+    font-size: 1.5rem;
+    font-weight: 900;
+  }
+
+  .controversial .split-score .score-val.high { color: #7eb8e0; }
+  .controversial .split-score .score-val.low { color: #e87890; }
+
+  .controversial .vs { font-size: 0.8rem; color: #5e4f78; font-weight: 700; }
+
+  .controversial .joke-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e8ddd0;
+    margin-bottom: 0.4rem;
+  }
+
+  .controversial .joke-context {
+    font-size: 0.8rem;
+    color: #8b7e9a;
+  }
+
+  /* Grading Style */
+  .grader-row {
+    display: flex;
+    align-items: center;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid #2d2750;
+  }
+
+  .grader-row:last-child { border-bottom: none; }
+
+  .grader-name { font-weight: 600; font-size: 0.95rem; flex: 1; }
+
+  .grader-avg { font-weight: 900; font-size: 1.2rem; width: 3rem; text-align: right; }
+
+  .grader-bar-wrap {
+    flex: 2;
+    margin: 0 1rem;
+    height: 8px;
+    background: #2d2750;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .grader-bar { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+
+  .grader-count { font-size: 0.75rem; color: #8b7e9a; width: 5rem; text-align: right; }
+
+  .generous .grader-bar { background: linear-gradient(90deg, #7eb8e0, #a0d0f0); }
+  .medium .grader-bar { background: linear-gradient(90deg, #e8913a, #f0a050); }
+  .harsh .grader-bar { background: linear-gradient(90deg, #e87890, #f0909a); }
+
+  .generous .grader-avg { color: #7eb8e0; }
+  .medium .grader-avg { color: #f0a050; }
+  .harsh .grader-avg { color: #e87890; }
+
+  /* All Ratings */
+  .ratings-list { max-height: 360px; overflow-y: auto; }
+  .ratings-list::-webkit-scrollbar { width: 4px; }
+  .ratings-list::-webkit-scrollbar-thumb { background: #3d3560; border-radius: 2px; }
+
+  .rating-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #231e40;
+    font-size: 0.82rem;
+    gap: 0.5rem;
+  }
+
+  .rating-item:last-child { border-bottom: none; }
+
+  .rating-emoji { font-size: 1.2rem; flex-shrink: 0; }
+  .rating-joke { flex: 1; color: #a89bae; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rating-author { color: #e87890; font-weight: 600; flex-shrink: 0; }
+  .rating-arrow { color: #5e4f78; flex-shrink: 0; }
+  .rating-grader { color: #8b7e9a; flex-shrink: 0; }
+  .rating-date { color: #5e4f78; font-size: 0.7rem; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>eating a hot dog at a gay bar</h1>
+    <p>Joke Rating Leaderboard &middot; 34 ratings &middot; Nov 2024 &ndash; Mar 2026</p>
+  </header>
+
+  <!-- PODIUM -->
+  <div class="section" id="podium-section">
+    <div class="section-title">Total Points</div>
+    <div class="podium" id="podium"></div>
+  </div>
+
+  <!-- BEST JOKE with chat context -->
+  <div class="section" id="best-section">
+    <div class="section-title">Highest Rated Joke &mdash; 17 combined pts</div>
+    <div class="best-joke">
+      <div class="score-badge">8&#xFE0F;&#x20E3; + 9&#xFE0F;&#x20E3; = 17 pts</div>
+
+      <div class="chat-window">
+        <div class="chat-sender me-label">Joshua</div>
+        <div class="chat-bubble-row me">
+          <div class="chat-bubble">You want your bf hot making out with his friends??</div>
+        </div>
+        <div class="chat-bubble-row me">
+          <div class="chat-bubble">But it's lip-to-lip!</div>
+        </div>
+
+        <div class="chat-sender" style="margin-top:0.4rem">Aaron</div>
+        <div class="chat-bubble-row them">
+          <div class="chat-bubble">I mean if I eventually get to make out with hot people then maybe</div>
+        </div>
+
+        <div class="chat-sender me-label">Joshua</div>
+        <div class="chat-bubble-row me">
+          <div class="chat-bubble">Okay you little cuck</div>
+        </div>
+        <div class="chat-bubble-row me">
+          <div class="chat-bubble">Guys, I'm cheesing in public that I got a nine</div>
+        </div>
+        <div class="chat-bubble-row me">
+          <div class="chat-bubble">It's an honor just to be nominated</div>
+        </div>
+
+        <div class="chat-sender" style="margin-top:0.4rem">Joshua</div>
+        <div class="chat-bubble-row me">
+          <div class="chat-bubble">But&hellip;does Aaron like it?</div>
+        </div>
+
+        <div class="chat-sender" style="margin-top:0.4rem">Aaron</div>
+        <div class="chat-bubble-row them">
+          <div class="chat-bubble highlighted">It's an honor just to be included<span class="reaction-badge">8&#xFE0F;&#x20E3; 9&#xFE0F;&#x20E3;</span></div>
+        </div>
+
+        <div class="chat-sender" style="margin-top:0.6rem">Marty</div>
+        <div class="chat-bubble-row them">
+          <div class="chat-bubble">Was v sleepy this morning reading these texts</div>
+        </div>
+      </div>
+
+      <div class="joke-meta">by <span class="author-name">Aaron</span> &middot; Jul 25, 2025</div>
+    </div>
+  </div>
+
+  <!-- MOST CONTROVERSIAL -->
+  <div class="section">
+    <div class="section-title">Most Controversial &mdash; Biggest Rating Gap</div>
+    <div class="controversial">
+      <div class="joke-text">&ldquo;Dive into that pussy bro&rdquo;</div>
+      <div class="joke-context">Aaron, after Marty said he bought a snorkel mask</div>
+      <div class="split-scores">
+        <div class="split-score">
+          <div class="grader-label">Joshua</div>
+          <div class="score-val high">9&#xFE0F;&#x20E3;</div>
+        </div>
+        <div class="vs">vs</div>
+        <div class="split-score">
+          <div class="grader-label">Marty</div>
+          <div class="score-val low">3&#xFE0F;&#x20E3;</div>
+        </div>
+      </div>
+      <div class="joke-context">6-point gap &middot; Jul 13, 2025</div>
+    </div>
+  </div>
+
+  <!-- SUPERLATIVES -->
+  <div class="section">
+    <div class="section-title">Superlatives</div>
+    <div class="superlatives-grid" id="superlatives"></div>
+  </div>
+
+  <!-- GRADING STYLE -->
+  <div class="section" id="grading-section">
+    <div class="section-title">Grading Style &mdash; Average Rating Given</div>
+    <div id="grading-list"></div>
+  </div>
+
+  <!-- ALL RATINGS -->
+  <div class="section">
+    <div class="section-title">All Ratings</div>
+    <div class="ratings-list" id="all-ratings"></div>
+  </div>
+</div>
+
+<script>
+const DATA = [
+  {author:"Aaron",grader:"Joshua",emoji:"8\uFE0F\u20E3",score:8,joke:"This is soy boy Harry Potter???",date:"2026-03-29"},
+  {author:"Joshua",grader:"Marty",emoji:"3\uFE0F\u20E3",score:3,joke:"So you wanna\u2026..stick?",date:"2025-12-05"},
+  {author:"Joshua",grader:"Aaron",emoji:"6\uFE0F\u20E3",score:6,joke:"Let us know if you are getting dick tonight Marty or you wanna get hockey stick?",date:"2025-12-05"},
+  {author:"Aaron",grader:"Joshua",emoji:"3\uFE0F\u20E3",score:3,joke:"Just agree it was a good joke thanks",date:"2025-10-04"},
+  {author:"Aaron",grader:"Marty",emoji:"6\uFE0F\u20E3",score:6,joke:"Just agree it was a good joke thanks",date:"2025-10-04"},
+  {author:"Marty",grader:"Joshua",emoji:"6\uFE0F\u20E3",score:6,joke:"Plenty of bussy tho \uD83D\uDC40",date:"2025-09-18"},
+  {author:"Aaron",grader:"Marty",emoji:"9\uFE0F\u20E3",score:9,joke:"It's an honor just to be included",date:"2025-07-25"},
+  {author:"Aaron",grader:"Joshua",emoji:"8\uFE0F\u20E3",score:8,joke:"It's an honor just to be included",date:"2025-07-25"},
+  {author:"Joshua",grader:"Marty",emoji:"9\uFE0F\u20E3",score:9,joke:"Okay you little cuck",date:"2025-07-25"},
+  {author:"Joshua",grader:"Aaron",emoji:"\uD83D\uDD1F",score:10,joke:"Get dat bush big",date:"2025-07-17"},
+  {author:"Marty",grader:"Joshua",emoji:"9\uFE0F\u20E3",score:9,joke:"Inflation is wild",date:"2025-07-13"},
+  {author:"Aaron",grader:"Marty",emoji:"3\uFE0F\u20E3",score:3,joke:"Dive into that pussy bro",date:"2025-07-13"},
+  {author:"Aaron",grader:"Joshua",emoji:"9\uFE0F\u20E3",score:9,joke:"Dive into that pussy bro",date:"2025-07-13"},
+  {author:"Marty",grader:"Joshua",emoji:"8\uFE0F\u20E3",score:8,joke:"You just like an authority figure",date:"2025-05-22"},
+  {author:"Aaron",grader:"Marty",emoji:"9\uFE0F\u20E3",score:9,joke:"No the car already did that I'm not trying to cause a pile on",date:"2025-04-12"},
+  {author:"Marty",grader:"Joshua",emoji:"8\uFE0F\u20E3",score:8,joke:"That tracks",date:"2025-03-25"},
+  {author:"Marty",grader:"Joshua",emoji:"9\uFE0F\u20E3",score:9,joke:"-1",date:"2025-03-08"},
+  {author:"Joshua",grader:"Marty",emoji:"5\uFE0F\u20E3",score:5,joke:"You need goo-be-gone",date:"2025-03-08"},
+  {author:"Joshua",grader:"Marty",emoji:"6\uFE0F\u20E3",score:6,joke:"You need goo-be-gone",date:"2025-03-08"},
+  {author:"Marty",grader:"Joshua",emoji:"7\uFE0F\u20E3",score:7,joke:"Join their poly squad and make a quad",date:"2025-03-08"},
+  {author:"Aaron",grader:"Joshua",emoji:"7\uFE0F\u20E3",score:7,joke:"I'm okay with the fact that it didn't land",date:"2025-01-31"},
+  {author:"Marty",grader:"Joshua",emoji:"0\uFE0F\u20E3",score:0,joke:"Wrong side of plane",date:"2025-01-09"},
+  {author:"Aaron",grader:"Joshua",emoji:"\uD83D\uDD1F",score:10,joke:"In the attic",date:"2024-12-15"},
+  {author:"Aaron",grader:"Joshua",emoji:"7\uFE0F\u20E3",score:7,joke:"Did you say hey bro we have rights to that weekend because of homo",date:"2024-12-15"},
+  {author:"Marty",grader:"Joshua",emoji:"\uD83D\uDD1F",score:10,joke:"All I want for my birthday is a Waymo ride and kbbq",date:"2024-12-12"},
+  {author:"Aaron",grader:"Marty",emoji:"\uD83D\uDD1F",score:10,joke:"He's taking slay to a whole new level",date:"2024-12-09"},
+  {author:"Aaron",grader:"Joshua",emoji:"\uD83D\uDD1F",score:10,joke:"I thought you had a hard on for dom but it looks like summy is your yummy",date:"2024-12-04"},
+  {author:"Aaron",grader:"Joshua",emoji:"\uD83D\uDD1F",score:10,joke:"[image]",date:"2024-12-02"},
+  {author:"Joshua",grader:"Marty",emoji:"8\uFE0F\u20E3",score:8,joke:"Such a bottom question",date:"2024-11-26"},
+  {author:"Marty",grader:"Joshua",emoji:"8\uFE0F\u20E3",score:8,joke:"Are you moving to silver lake in June?",date:"2024-11-26"},
+  {author:"Aaron",grader:"Marty",emoji:"2\uFE0F\u20E3",score:2,joke:"You can pea cock on this DICK",date:"2024-11-14"},
+  {author:"Marty",grader:"Joshua",emoji:"1\uFE0F\u20E3",score:1,joke:"You're only giving him a ten because he's giving you praise",date:"2024-11-01"},
+  {author:"Joshua",grader:"Aaron",emoji:"\uD83D\uDD1F",score:10,joke:"That's a ranking out of ten. Can we make that a thing??",date:"2024-11-01"},
+  {author:"Marty",grader:"Joshua",emoji:"4\uFE0F\u20E3",score:4,joke:"Your gpu feels differently",date:"2024-11-01"},
+];
+
+// --- Compute leaderboard ---
+const totals = {};
+const received = {};
+const given = {};
+DATA.forEach(d => {
+  totals[d.author] = (totals[d.author] || 0) + d.score;
+  if (!received[d.author]) received[d.author] = [];
+  received[d.author].push(d);
+  if (!given[d.grader]) given[d.grader] = [];
+  given[d.grader].push(d);
+});
+
+const sorted = Object.entries(totals).sort((a,b) => b[1] - a[1]);
+
+// --- Podium ---
+const podiumOrder = [sorted[1], sorted[0], sorted[2]];
+const trophies = { 0: '\uD83E\uDD48', 1: '\uD83E\uDD47', 2: '\uD83E\uDD49' };
+const ranks = [1, 0, 2];
+const podiumEl = document.getElementById('podium');
+podiumOrder.forEach(([name, pts], i) => {
+  const rank = ranks[i];
+  const count = received[name].length;
+  const avg = (pts / count).toFixed(1);
+  const spot = document.createElement('div');
+  spot.className = 'podium-spot';
+  spot.innerHTML = `
+    <div class="trophy">${trophies[rank]}</div>
+    <div class="name">${name}</div>
+    <div class="points"><span>${pts}</span> pts</div>
+    <div class="stats-row"><span>${count} ratings</span><span>avg ${avg}</span></div>
+    <div class="podium-bar">${rank + 1}</div>
+  `;
+  podiumEl.appendChild(spot);
+});
+
+// --- Superlatives ---
+const supEl = document.getElementById('superlatives');
+const superlatives = [
+  {
+    icon: '\uD83D\uDCA9',
+    label: 'Worst Bomb',
+    name: 'Marty',
+    detail: '0\uFE0F\u20E3 from Joshua',
+    joke: '"Wrong side of plane"'
+  },
+  {
+    icon: '\uD83D\uDC51',
+    label: 'Most Rated Person',
+    name: 'Aaron',
+    detail: '14 ratings received',
+    joke: 'Nearly half of all ratings'
+  },
+  {
+    icon: '\uD83C\uDFAF',
+    label: 'Biggest Fan',
+    name: 'Joshua \u2192 Aaron',
+    detail: 'Avg 8.1 across 9 ratings',
+    joke: 'Gave Aaron five \uD83D\uDD1F\'s'
+  },
+  {
+    icon: '\u2744\uFE0F',
+    label: 'Harshest Critic',
+    name: 'Marty \u2192 Aaron',
+    detail: 'Avg 5.5 across 4 ratings',
+    joke: 'Gave Aaron a 2\uFE0F\u20E3 and a 3\uFE0F\u20E3'
+  },
+  {
+    icon: '\uD83C\uDF1F',
+    label: 'The OG',
+    name: 'Joshua',
+    detail: 'Nov 1, 2024',
+    joke: 'Started the whole rating system'
+  },
+  {
+    icon: '\uD83D\uDCA4',
+    label: 'Longest Drought',
+    name: 'Joshua',
+    detail: '132 days with no points',
+    joke: 'Jul 25 \u2192 Dec 5, 2025'
+  },
+];
+
+superlatives.forEach(s => {
+  const card = document.createElement('div');
+  card.className = 'superlative-card';
+  card.innerHTML = `
+    <div class="sup-icon">${s.icon}</div>
+    <div class="sup-label">${s.label}</div>
+    <div class="sup-name">${s.name}</div>
+    <div class="sup-detail">${s.detail}</div>
+    <div class="sup-joke">${s.joke}</div>
+  `;
+  supEl.appendChild(card);
+});
+
+// --- Grading style ---
+const gradingEl = document.getElementById('grading-list');
+const graderEntries = Object.entries(given).map(([name, ratings]) => {
+  const avg = ratings.reduce((s,r) => s + r.score, 0) / ratings.length;
+  return { name, avg, count: ratings.length };
+}).sort((a,b) => b.avg - a.avg);
+
+graderEntries.forEach(g => {
+  const cls = g.avg >= 7.5 ? 'generous' : g.avg >= 5 ? 'medium' : 'harsh';
+  const pct = (g.avg / 10 * 100).toFixed(0);
+  const row = document.createElement('div');
+  row.className = `grader-row ${cls}`;
+  row.innerHTML = `
+    <div class="grader-name">${g.name}</div>
+    <div class="grader-bar-wrap"><div class="grader-bar" style="width:${pct}%"></div></div>
+    <div class="grader-avg">${g.avg.toFixed(1)}</div>
+    <div class="grader-count">${g.count} ratings</div>
+  `;
+  gradingEl.appendChild(row);
+});
+
+// --- All Ratings ---
+const allEl = document.getElementById('all-ratings');
+DATA.forEach(d => {
+  const item = document.createElement('div');
+  item.className = 'rating-item';
+  item.innerHTML = `
+    <span class="rating-emoji">${d.emoji}</span>
+    <span class="rating-author">${d.author}</span>
+    <span class="rating-joke">${d.joke}</span>
+    <span class="rating-arrow">\u2190</span>
+    <span class="rating-grader">${d.grader}</span>
+    <span class="rating-date">${d.date}</span>
+  `;
+  allEl.appendChild(item);
+});
+</script>
+</body>
+</html>
